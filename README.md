@@ -1,0 +1,3 @@
+This is the code for a class project studying the work of Bob Ross, used in producing [this poster](http://www.cs.utah.edu/~abigelow/Downloads/bobRoss/poster.pdf) and a [more detailed report](http://www.cs.utah.edu/~abigelow/Downloads/bobRoss/Final%20Report.pdf). The code is really sloppy - just throwaway code for a class project - but we're providing it in case someone finds either the analysis or the visualizations useful.
+
+Like the [original dataset](https://github.com/fivethirtyeight/data/tree/master/bob-ross), this is provided with an MIT License.
