@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+
+<head>
+    <script type="application/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script type="application/javascript" src="d3.v3.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: "Helvetica";
+        }
+        td {
+            border: 1px solid rgba(0, 0, 0, 0.17);
+            padding: 14px;
+        }
+        .axis {
+            fill: none;
+            stroke-weight: 1px;
+        }
+        .point {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body onload="setupPlots()">
+    <table>
+        <thead>
+            <tr id="techniqueHeaders">
+                <td></td>
+            </tr>
+            <tr id="itemTypeHeaders">
+                <td>Clusters:</td>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+    function identity(d) {
+        return d;
+    }
+    function barycentricPlot(svgId, dataPath) {
+        var padding = 40,
+            bounds = jQuery('#' + svgId)[0].getBoundingClientRect(),
+            width = bounds.width - 2 * padding,
+            height = bounds.height - 2 * padding,
+            radius;
+        
+        var container = d3.select('#' + svgId).selectAll('.container').data([0]);
+        container.enter().append('g').attr('class', 'container');
+        
+        // center the group and make it square
+        if (width > height) {
+            radius = height / 2;
+            container.attr('transform', 'translate(' + (radius+padding+(width-height)/2) + ',' +
+                                                       (radius+padding) + ')');
+        } else {
+            radius = width / 2;
+            container.attr('transform', 'translate(' + (radius+padding) + ',' +
+                                                       (radius+padding+(height-width)/2) + ')');
+        }
+        
+        d3.json(dataPath, function(error, data) {
+            // lay out the axes and prime the colors
+            var dTheta = 2*Math.PI / data.centers.length,
+                axisVectors = {},
+                a,
+                c,
+                colors = d3.scale.category10();
+            
+            if (data.centers.length === 2) {
+                c = data.centers[0];
+                axisVectors[c] = {
+                    x : radius,
+                    y : 0
+                };
+                colors(c);
+                c = data.centers[1];
+                axisVectors[c] = {
+                    x : 0,
+                    y : -radius
+                };
+                colors(c);
+            } else {
+                for (a = 0; a < data.centers.length; a += 1) {
+                    c = data.centers[a];
+                    axisVectors[c] = {
+                        x : radius*Math.cos(a*dTheta),
+                        y : radius*Math.sin(a*dTheta),
+                    };
+                    colors(c);  // primes the color
+                }
+            }
+            
+            var axes = container.selectAll('.axis')
+                .data(data.centers, identity);
+            axes.enter().append('line')
+                .attr('class', 'axis')
+                .attr('x1', 0)
+                .attr('y1', 0);
+            axes.attr('x2', function (d) { return axisVectors[d].x; })
+                .attr('y2', function (d) { return axisVectors[d].y; })
+                .style('stroke', function (d) { return colors(d); });
+            
+            // draw the points
+            var points = container.selectAll('.point')
+                .data(data.points, function (d) { return d.name; });
+            points.enter().append('circle')
+                .attr('class', 'point')
+                .attr('r', 3);
+            
+            points.attr('cx', function (d) {
+                    var sum = 0,
+                        a;
+                    for (a in axisVectors) {
+                        if (axisVectors.hasOwnProperty(a)) {
+                            sum += axisVectors[a].x * (1 - d.clusterDistances[a]);
+                        }
+                    }
+                    return sum;
+                })
+                .attr('cy', function (d) {
+                    var sum = 0,
+                        a;
+                    for (a in axisVectors) {
+                        if (axisVectors.hasOwnProperty(a)) {
+                            sum += axisVectors[a].y * (1 - d.clusterDistances[a]);
+                        }
+                    }
+                    return sum;
+                })
+                .attr('fill', function (d) { return colors(d.center); })
+                .on('mouseover', function (d) {
+                    d3.select(this.parentNode).select('.costLabel').text(d.name);
+                })
+                .on('mouseout', function(d) {
+                    var temp = d3.select(this.parentNode);
+                    temp.select('.costLabel').text('Total Cost: ' + data.cost.toFixed(2));
+                });
+            
+            // add the cost label
+            var costLabel = container.selectAll('.costLabel').data([data.cost]);
+            costLabel.enter().append('text')
+                .attr('class', 'costLabel')
+                .attr('y', radius + padding)
+                .attr('text-anchor', 'middle');
+            costLabel.text(function (d) { return 'Total Cost: ' + d.toFixed(2); });
+        });
+    }
+    function setupPlots() {
+        var clusterTechniques = ['gonzalez', 'gonzalezMedioids', 'kMeansPlusPlus', 'kMeansPlusPlusMedioids'],
+            itemTypes = ['paintings', 'elements'],
+            centers = [2,3,4,5,6,7,8,9,10],
+            t,
+            i,
+            c,
+            name;
+        d3.select('tbody').selectAll('tr').data(centers, identity)
+            .enter().append('tr').attr('id', function(d) { return 'center' + d;})
+            .append('td').text(identity);
+        
+        for (t = 0; t < clusterTechniques.length; t += 1) {
+            d3.select('#techniqueHeaders').append('td')
+                .attr('colspan', '2')
+                .text('Algorithm: ' + clusterTechniques[t]);
+            for (i = 0; i < itemTypes.length; i += 1) {
+                d3.select('#itemTypeHeaders').append('td')
+                    .text(itemTypes[i]);
+                for (c = 0; c < centers.length; c += 1) {
+                    name = clusterTechniques[t] + "_" + centers[c] + "_" + itemTypes[i];
+                    d3.select('#center' + centers[c]).append('td').append('svg')
+                        .attr('id', name)
+                        .attr('width', 400)
+                        .attr('height', 400);
+                    barycentricPlot(name, name + '.json');
+                }
+            }
+        }
+    }
+    </script>
+</body>
+
+</html>
