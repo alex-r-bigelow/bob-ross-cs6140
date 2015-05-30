@@ -1,3 +1,5 @@
 This is the code for a class project studying the work of Bob Ross, used in producing [this poster](http://www.cs.utah.edu/~abigelow/Downloads/bobRoss/poster.pdf) and a [more detailed report](http://www.cs.utah.edu/~abigelow/Downloads/bobRoss/Final%20Report.pdf). The code is really sloppy - just throwaway code for a class project - but we're providing it in case someone finds either the analysis or the visualizations useful.
 
+Probably the most interesting bit (at least from my perspective) is our [visualization technique](https://rawgit.com/yasashiku/bob-ross-cs6140/master/barycentric.html) inspired by barycentric coordinates for non-spatial cluster visualization. It's probably not publishable, but may be useful - the main purpose is to show the quality of clusters. Note that for k > 3 clusters, the ordering of vectors is arbitrary and may obscure some patterns; ideally the user should be able to reorder the vectors at will (but this was beyond the scope of the assignment).
+
 Like the [original dataset](https://github.com/fivethirtyeight/data/tree/master/bob-ross), this is provided with an MIT License.
